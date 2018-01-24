@@ -1,0 +1,39 @@
+.shop-icon-container{
+    align-content: stretch;
+    align-items: stretch;
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-between;
+}
+.shop-icon-wrap{
+    position: relative;
+    margin:5px;
+    padding:5px;
+    cursor: pointer !important;
+    background-color: #fafafa;
+    border-color: #e5e6e9 #dfe0e4 #d0d1d5;
+    border-image: none;
+    border-radius: 3px;
+    border-style: solid;
+    border-width: 1px;
+
+    flex-grow: 1;
+    float: left;
+    max-width: 200px;
+    white-space: normal;
+    text-align: center;
+    max-height: 200px;
+}
+
+.shop-icon-wrap:hover{
+    background-color: #F5F5F5;
+}
+
+
+.shop-icon-wrap div.tools{
+    display: inline-block;
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 100%;
+}

@@ -1,0 +1,25 @@
+{
+  "name": "dvelum/module-shop",
+  "version": "2.0.0-dev",
+  "type": "dvelum-module",
+  "description": "Shop catalog module for DVelum v2",
+  "keywords": ["dvelum","shop", "catalog"],
+  "homepage": "https://github.com/dvelum/module-shop",
+  "license": "GPL-3.0",
+  "authors": [
+    {
+      "name": "Kirill Yegorov",
+      "email": "kirill@dvelum.com",
+      "role": "Developer"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/dvelum/module-shop/issues",
+    "source": "https://github.com/dvelum/module-shop"
+  },
+  "require": {
+    "php":">=7.1",
+    "oomphinc/composer-installers-extender": "^1.1",
+    "dvelum/dvelum": ">=2.0.0"
+  }
+}
