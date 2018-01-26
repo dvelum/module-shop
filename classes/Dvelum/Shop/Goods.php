@@ -153,9 +153,9 @@ class Goods
 
     /**
      * Get code of product classification
-     * @return string
+     * @return string | int
      */
-    public function getCode() : string
+    public function getCode()
     {
         return $this->code;
     }

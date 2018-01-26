@@ -23,6 +23,7 @@ namespace Dvelum\App\Backend\Shop\Product;
  */
 use Dvelum\App\Backend;
 use Dvelum\Orm\Model;
+use Dvelum\Orm\Record;
 use Dvelum\App\Controller\EventManager;
 use Dvelum\App\Controller\Event;
 use Dvelum\Utils;
@@ -271,7 +272,7 @@ class Controller extends Backend\Ui\Controller
     /**
      * @throws Exception
      */
-    public function getPostedData($objectName)
+    public function getPostedData($objectName) : ?Record
     {
         // convert fields data before save
         $fields = $this->request->post('fields','array',[]);
@@ -326,7 +327,6 @@ class Controller extends Backend\Ui\Controller
         }
         $groups = json_encode($groups);
         $this->request->updatePost('groups', $groups);
-
         return parent::getPostedData($objectName);
     }
 }
