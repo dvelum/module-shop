@@ -75,6 +75,7 @@ class Controller extends Backend\Ui\Controller
             echo $e->getMessage();
             Model::factory($this->getObjectName())->logError($e->getMessage());
             $this->response->error($this->lang->get('CANT_EXEC'));
+            return;
         }
 
         foreach ($data as &$item)
@@ -230,6 +231,7 @@ class Controller extends Backend\Ui\Controller
 
         if(empty($id)){
             $this->response->error($this->lang->get('WRONG_REQUEST'));
+            return;
         }
 
         try{

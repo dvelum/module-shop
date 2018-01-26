@@ -1,44 +1,63 @@
 <?php
 /**
- *  DVelum project http://code.google.com/p/dvelum/ , https://github.com/k-samuel/dvelum , http://dvelum.net
- *  Copyright (C) 2011-2017  Kirill Yegorov
+ * DVelum project http://code.google.com/p/dvelum/ , https://github.com/k-samuel/dvelum , http://dvelum.net
+ * Copyright (C) 2011-2017  Kirill Yegorov
  *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-class Dvelum_Backend_Shop_Goods_Controller extends Backend_Controller_Crud
+namespace Dvelum\App\Backend\Shop\Goods;
+
+use Dvelum\App\Backend;
+use Dvelum\Orm\Record;
+use Dvelum\Orm\Model;
+use Dvelum\Utils;
+use Dvelum\Filter;
+use \Exception;
+
+use Dvelum\Shop\Storage;
+use Dvelum\Shop\Goods;
+use Dvelum\Shop\Product;
+use Dvelum\Shop\Image;
+use Dvelum\Shop\Goods\Form;
+
+class Controller extends Backend\Ui\Controller
 {
-    protected $_listFields = ["title","id","model","product",'images'];
-    protected $_canViewObjects = ["dvelum_shop_category","dvelum_shop_product"];
+    protected $listFields = ["title","id","model","product",'images'];
+    protected $canViewObjects = ["dvelum_shop_category","dvelum_shop_product"];
 
-    public function getModule()
+    public function getModule() : string
     {
         return 'Dvelum_Shop_Goods';
     }
 
-    public function  getObjectName()
+    public function  getObjectName() : string
     {
         return 'Dvelum_Shop_Goods';
     }
 
-    protected function _getList()
+    /**
+     * @return array
+     * @throws Exception
+     * @throws \Dvelum\Orm\Exception
+     */
+    protected function getList()
     {
-        $pager = Request::post('pager' , 'array' , []);
-        $filter = Request::post('filter' , 'array' , []);
-        $query = Request::post('search' , 'string' , false);
+        $pager = $this->request->post('pager' , 'array' , []);
+        $filter = $this->request->post('filter' , 'array' , []);
+        $query = $this->request->post('search' , 'string' , false);
 
-        $storage = Dvelum_Shop_Storage::factory();
+        $storage = Storage::factory();
         $count = $storage->count($filter, $query);
         $data = [];
 
@@ -46,7 +65,7 @@ class Dvelum_Backend_Shop_Goods_Controller extends Backend_Controller_Crud
         {
             $result = $storage->find($filter, $pager, $query);
             /**
-             * @var Dvelum_Shop_Goods $item
+             * @var Goods $item
              */
             foreach ($result as $item)
             {
@@ -54,7 +73,7 @@ class Dvelum_Backend_Shop_Goods_Controller extends Backend_Controller_Crud
                 $fields['id'] = $item->getId();
 
                 foreach ($fields as $field=>$val){
-                    if(!in_array($field,$this->_listFields,true)){
+                    if(!in_array($field, $this->listFields,true)){
                         unset($fields[$field]);
                     }
                 }
@@ -62,9 +81,9 @@ class Dvelum_Backend_Shop_Goods_Controller extends Backend_Controller_Crud
             }
 
             $productIds = Utils::fetchCol('product', $data);
-            $products = Db_Object::factory('Dvelum_Shop_Product', $productIds);
+            $products = Record::factory('Dvelum_Shop_Product', $productIds);
 
-            $imageStore = Dvelum_Shop_Image::factory();
+            $imageStore = Image::factory();
 
             foreach ($data as $k=>&$v)
             {
@@ -81,7 +100,6 @@ class Dvelum_Backend_Shop_Goods_Controller extends Backend_Controller_Crud
                 }
             }unset($v);
         }
-
         return ['data' =>$data , 'count'=> $count];
     }
 
@@ -90,18 +108,18 @@ class Dvelum_Backend_Shop_Goods_Controller extends Backend_Controller_Crud
      * @return array
      * @throws Exception
      */
-    protected function _getData()
+    protected function getData()
     {
-        $id = Request::post('id' , 'integer' , false);
+        $id = $this->request->post('id' , 'integer' , false);
 
         if(!$id)
             return [];
 
-        $storage = Dvelum_Shop_Storage::factory();
+        $storage = Storage::factory();
         try{
             $obj = $storage->load($id);
         }catch(Exception $e){
-            Model::factory($this->_objectName)->logError($e->getMessage());
+            Model::factory($this->objectName)->logError($e->getMessage());
             return [];
         }
 
@@ -112,7 +130,7 @@ class Dvelum_Backend_Shop_Goods_Controller extends Backend_Controller_Crud
 
         if(!empty($images) && is_array($images))
         {
-            $imageStore = Dvelum_Shop_Image::factory();
+            $imageStore = Image::factory();
             $images = $imageStore->getImages($images);
             foreach ($images as &$image){
                 $image = [
@@ -129,89 +147,100 @@ class Dvelum_Backend_Shop_Goods_Controller extends Backend_Controller_Crud
 
     public function loadObjectAction()
     {
-        $id = Request::post('id' , 'integer' , false);
+        $id = $this->request->post('id' , 'integer' , false);
 
         if(!$id){
-            Response::jsonError($this->_lang->get('WRONG_REQUEST'));
+            $this->response->error($this->lang->get('WRONG_REQUEST'));
+            return;
         }
 
-        $storage = Dvelum_Shop_Storage::factory();
+        $storage = Storage::factory();
         try{
             $obj = $storage->load($id);
         }catch(Exception $e){
             Model::factory($this->getObjectName())->logError($e->getMessage());
-            Response::jsonError($this->_lang->get('CANT_EXEC'));
+            $this->response->error($this->lang->get('CANT_EXEC'));
+            return;
         }
 
-        $form = new Dvelum_Shop_Goods_Form();
+        $form = new Form();
 
         $config = $form->backendFormConfig($obj->getConfig());
         $data = $form->backendFormData($obj);
 
-        Response::jsonSuccess(['data'=>$data,'config'=>$config]);
+        $this->response->success(['data'=>$data,'config'=>$config]);
     }
     /**
      * Get configuration for new goods by product
      */
     public function loadObjectDefaultsAction()
     {
-        $productId = Request::post('product', Filter::FILTER_INTEGER, false);
+        $productId = $this->request->post('product', Filter::FILTER_INTEGER, false);
         if(!$productId){
-            Response::jssonError($this->_lang->get('WRONG_REQUEST'));
+            $this->response->error($this->lang->get('WRONG_REQUEST'));
+            return;
         }
 
         try{
-            $product = Dvelum_Shop_Product::factory($productId);
+            $product = Product::factory($productId);
         }catch(Exception $e){
             Model::factory($this->getObjectName())->logError($e->getMessage());
-            Response::jsonError($this->_lang->get('CANT_EXEC'));
+            $this->response->error($this->lang->get('CANT_EXEC'));
+            return;
         }
 
-        $form = new Dvelum_Shop_Goods_Form();
+        $form = new Form();
         $config = $form->backendFormConfig($product);
         $data = ['product'=>$productId];
-        Response::jsonSuccess(['data'=>$data,'config'=>$config]);
+
+        $this->response->success(['data'=>$data,'config'=>$config]);
     }
 
     public function editAction()
     {
-        $this->_checkCanEdit();
-
-        $id = Request::post('id' ,'integer', false);
-        $product = Request::post('product' ,'integer', false);
-
-        if(!$product){
-            Response::jsonError($this->_lang->get('FILL_FORM'),['product'=>$this->_lang->get('CANT_BE_EMPTY')]);
+        if(!$this->checkCanEdit()){
+            return;
         }
 
-        $storage = Dvelum_Shop_Storage::factory();
+        $id = $this->request->post('id' ,'integer', false);
+        $product = $this->request->post('product' ,'integer', false);
+
+        if(!$product){
+            $this->response->error($this->lang->get('FILL_FORM'),['product'=>$this->lang->get('CANT_BE_EMPTY')]);
+            return;
+        }
+
+        $storage = Storage::factory();
         try{
             if($id){
                 $obj = $storage->load($id);
             }else{
-                $obj = Dvelum_Shop_Goods::factory($product);
+                $obj = Goods::factory($product);
             }
         }catch(Exception $e){
             Model::factory($this->getObjectName())->logError($e->getMessage());
-            Response::jsonError($this->_lang->get('CANT_EXEC'));
+            $this->response->error($this->lang->get('CANT_EXEC'));
+            return;
         }
 
-        $this->applyPostedData($obj);
+        if(!$this->applyPostedData($obj)){
+            return;
+        }
 
         if(!$storage->save($obj)){
-            Response::jsonError($this->_lang->get('CANT_EXEC'));
+            $this->response->error($this->lang->get('CANT_EXEC'));
         }else{
-            Response::jsonSuccess(['id'=>$obj->getId()]);
+            $this->response->success(['id'=>$obj->getId()]);
         }
     }
 
-    protected function applyPostedData(Dvelum_Shop_Goods $object)
+    protected function applyPostedData(Goods $object)
     {
         $productConfig = $object->getConfig();
         $fields = $productConfig->getFields();
         $errors = [];
 
-        $posted = Request::postArray();
+        $posted = $this->request->postArray();
 
         foreach ($fields as $field)
         {
@@ -230,7 +259,7 @@ class Dvelum_Backend_Shop_Goods_Controller extends Backend_Controller_Crud
                         (is_array($posted[$name] && empty($posted[$name])))
                      )
             ){
-                $errors[$name] = $this->_lang->get('CANT_BE_EMPTY');
+                $errors[$name] = $this->lang->get('CANT_BE_EMPTY');
                 continue;
             }
 
@@ -248,13 +277,15 @@ class Dvelum_Backend_Shop_Goods_Controller extends Backend_Controller_Crud
             try{
                 $object->set($name , $posted[$name]);
             }catch(Exception $e){
-                $errors[$name] = $this->_lang->get('INVALID_VALUE');
+                $errors[$name] = $this->lang->get('INVALID_VALUE');
             }
         }
 
         if(!empty($errors)){
-            Response::jsonError($this->_lang->get('FILL_FORM') , $errors);
+            $this->response->error($this->lang->get('FILL_FORM') , $errors);
+            return false;
         }
+        return true;
     }
 
     /**
@@ -264,24 +295,30 @@ class Dvelum_Backend_Shop_Goods_Controller extends Backend_Controller_Crud
      */
     public function deleteAction()
     {
-        $this->_checkCanDelete();
-        $id = Request::post('id' , 'integer' , false);
+        if(!$this->checkCanDelete()){
+            return;
+        }
+        $id = $this->request->post('id' , 'integer' , false);
 
-        if(!$id)
-            Response::jsonError($this->_lang->get('WRONG_REQUEST'));
+        if(!$id){
+            $this->response->error($this->lang->get('WRONG_REQUEST'));
+            return;
+        }
 
-        $storage = Dvelum_Shop_Storage::factory();
+        $storage = Storage::factory();
 
         try{
             $object = $storage->load($id);
         }catch(Exception $e){
-            Response::jsonError($this->_lang->get('WRONG_REQUEST'));
+            $this->response->error($this->lang->get('WRONG_REQUEST'));
+            return;
         }
 
-        if(!$storage->delete($object))
-            Response::jsonError($this->_lang->get('CANT_EXEC'));
-
-        Response::jsonSuccess();
+        if(!$storage->delete($object)){
+            $this->response->error($this->lang->get('CANT_EXEC'));
+            return;
+        }
+        $this->response->success();
     }
 
     /**
@@ -289,26 +326,30 @@ class Dvelum_Backend_Shop_Goods_Controller extends Backend_Controller_Crud
      */
     public function commonFieldsAction()
     {
-        $id = Request::post('id','array',[]);
+        $id = $this->request->post('id','array',[]);
+
         if(empty($id) || !is_array($id)){
-            Response::jsonError($this->_lang->get('WRONG_REQUEST'));
+            $this->response->error($this->lang->get('WRONG_REQUEST'));
+            return;
         }
         $id = array_map('intval', $id);
 
-        $storage = Dvelum_Shop_Storage::factory();
+        $storage = Storage::factory();
 
         try{
             $list = $storage->loadItems($id);
         }catch (Exception $e){
-            Model::factory($this->_objectName)->logError($e->getMessage());
-            $this->_lang->get('CANT_EXEC');
+            Model::factory($this->objectName)->logError($e->getMessage());
+            $this->response->error($this->lang->get('CANT_EXEC'));
+            return;
         }
 
         if(empty($list)){
-            Response::jsonSuccess([]);
+            $this->response->success([]);
+            return;
         }
         /**
-         * @var Dvelum_Shop_Product[] $products
+         * @var Product[] $products
          */
         $products = [];
         // collect products
@@ -328,7 +369,7 @@ class Dvelum_Backend_Shop_Goods_Controller extends Backend_Controller_Crud
         foreach ($products as $product)
         {
             /**
-             * @var Dvelum_Shop_Product_Field[] $fields
+             * @var \Dvelum\Shop\Product\Field[] $fields
              */
             $fields = $product->getFields();
             if($isFirst){
@@ -355,14 +396,14 @@ class Dvelum_Backend_Shop_Goods_Controller extends Backend_Controller_Crud
 
         $result = [];
         if(!empty($commonFields)){
-            $formBuilder = new Dvelum_Shop_Goods_Form();
+            $formBuilder = new Form();
             foreach ($commonFields as $name=>$type){
                 $field = $firstProduct->getField($name);
                 if($field->getType() == 'text'){
                     continue;
                 }
                 $cfg = $formBuilder->backendFieldConfig($field);
-                $cfg['fieldLabel'] = $this->_lang->get('VALUE');
+                $cfg['fieldLabel'] = $this->lang->get('VALUE');
                 if($field->isMultiValue()){
                     $cfg['name'] = 'value[]';
                 }else{
@@ -371,34 +412,38 @@ class Dvelum_Backend_Shop_Goods_Controller extends Backend_Controller_Crud
                 $result[] = ['name'=>$name,'title'=>$field->getTitle(),'cfg'=>$cfg];
             }
         }
-
-        Response::jsonSuccess($result);
+        $this->response->success($result);
     }
     /**
      * Set field value for selected goods
      */
     public function setCommonFieldValuesAction()
     {
-        $this->_checkCanEdit();
+        if(!$this->checkCanEdit()){
+            return;
+        }
 
-        $id = Request::post('id','array',[]);
+        $id = $this->request->post('id','array',[]);
         if(empty($id) || !is_array($id)){
-            Response::jsonError($this->_lang->get('WRONG_REQUEST'));
+            $this->response->error($this->lang->get('WRONG_REQUEST'));
+            return;
         }
         $id = array_map('intval', $id);
-        $field = Request::post('field','string','');
-        $value = Request::post('value','raw',null);
+        $field = $this->request->post('field','string','');
+        $value = $this->request->post('value','raw',null);
 
         if(empty($field)){
-            Response::jsonError($this->_lang->get('FILL_FORM'),['field'=>$this->_lang->get('CANT_BE_EMPTY')]);
+            $this->response->error($this->lang->get('FILL_FORM'),['field'=>$this->lang->get('CANT_BE_EMPTY')]);
+            return;
         }
 
-        $storage = Dvelum_Shop_Storage::factory();
+        $storage = Storage::factory();
         try{
             $list = $storage->loadItems($id);
         }catch (Exception $e){
-            Model::factory($this->_objectName)->logError($e->getMessage());
-            $this->_lang->get('CANT_EXEC');
+            Model::factory($this->objectName)->logError($e->getMessage());
+            $this->response->error($this->lang->get('CANT_EXEC'));
+            return;
         }
 
         $count = 0;
@@ -413,10 +458,12 @@ class Dvelum_Backend_Shop_Goods_Controller extends Backend_Controller_Crud
                 $count++;
             }catch (Exception $e){
                 $failed[] = $item->getId();
-                Model::factory($this->_objectName)->logError($e->getMessage());
+                Model::factory($this->objectName)->logError($e->getMessage());
+                $this->response->error($this->lang->get('CANT_EXEC'));
+                return;
             }
         }
-        Response::jsonSuccess(['count'=>$count,'fails'=>implode(', ',$failed)]);
+        $this->response->success(['count'=>$count,'fails'=>implode(', ',$failed)]);
     }
 
     /**
@@ -424,37 +471,41 @@ class Dvelum_Backend_Shop_Goods_Controller extends Backend_Controller_Crud
      */
     public function changeProductAction()
     {
-        $this->_checkCanEdit();
+        if(!$this->checkCanEdit()){
+            return;
+        }
 
-        $id = Request::post('id','array',[]);
-        $product = Request::post('product','int',false);
+        $id = $this->request->post('id','array',[]);
+        $product = $this->request->post('product','int',false);
         if(empty($id) || !is_array($id) || empty($product)){
-            Response::jsonError($this->_lang->get('WRONG_REQUEST'));
+            $this->response->error($this->lang->get('WRONG_REQUEST'));
+            return;
         }
         $id = array_map('intval', $id);
 
-        $storage = Dvelum_Shop_Storage::factory();
+        $storage = Storage::factory();
         try{
             $list = $storage->loadItems($id);
         }catch (Exception $e){
-            Model::factory($this->_objectName)->logError($e->getMessage());
-            $this->_lang->get('CANT_EXEC');
+            Model::factory($this->objectName)->logError($e->getMessage());
+            $this->response->error($this->lang->get('CANT_EXEC'));
+            return;
         }
 
         $count = 0;
         $failed = [];
 
         try{
-            $productObject = Dvelum_Shop_Product::factory($product);
+            $productObject = Product::factory($product);
         }catch (Exception $e){
-            Response::jsonError($this->_lang('FILL_FORM'),['product'=>$this->_lang->get('INVALID_VALUE')]);
+            $this->response->error($this->lang->get('FILL_FORM'),['product'=>$this->lang->get('INVALID_VALUE')]);
+            return;
         }
-
 
         foreach ($list as $item)
         {
             try{
-                $newItem = Dvelum_Shop_Goods::factory($product);
+                $newItem = Goods::factory($product);
                 $newItem->setId($item->getId());
                 $data = $item->getData();
                 // copy values
@@ -470,9 +521,11 @@ class Dvelum_Backend_Shop_Goods_Controller extends Backend_Controller_Crud
                 $count++;
             }catch (Exception $e){
                 $failed[] = $item->getId();
-                Model::factory($this->_objectName)->logError($e->getMessage());
+                Model::factory($this->objectName)->logError($e->getMessage());
+                $this->response->error($this->lang->get('CANT_EXEC'));
+                return;
             }
         }
-        Response::jsonSuccess(['count'=>$count,'fails'=>implode(', ',$failed)]);
+        $this->response->success(['count'=>$count,'fails'=>implode(', ',$failed)]);
     }
 }

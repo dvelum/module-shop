@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  *  DVelum project http://dvelum.net, http://dvelum.ru, https://github.com/k-samuel/dvelum
  *  Copyright (C) 2011-2017  Kirill Yegorov
@@ -16,24 +17,27 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+namespace Dvelum\Shop\Image;
 
-abstract class Dvelum_Shop_Image_AbstractAdapter
+use Dvelum\Config\ConfigInterface;
+
+abstract class AbstractAdapter
 {
     /**
      * Configuration object
-     * @var Config_Abstract
+     * @var ConfigInterface
      */
     protected $config;
 
-    public function __construct(Config_Abstract $config)
+    public function __construct(ConfigInterface $config)
     {
         $this->config = $config;
     }
 
     /**
-     * @return Config_Abstract
+     * @return ConfigInterface
      */
-    public function getConfig()
+    public function getConfig() : ConfigInterface
     {
         return $this->config;
     }
@@ -49,28 +53,28 @@ abstract class Dvelum_Shop_Image_AbstractAdapter
     /**
      * Delete image
      * @param $id
-     * @return boolean
+     * @return bool
      */
-    abstract public function deleteImage($id);
+    abstract public function deleteImage($id) : bool;
 
     /**
      * Get image info
      * @param $id
      * @return array
      */
-    abstract public function getImage($id);
+    abstract public function getImage($id) : array;
 
     /**
      * Get images info
      * @param array $ids
      * @return array
      */
-    abstract public function getImages(array $ids);
+    abstract public function getImages(array $ids) : array;
 
     /**
      * Upload images
      * @return array
      */
-    abstract public function uploadImages();
+    abstract public function uploadImages() : array;
 
 }

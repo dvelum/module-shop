@@ -24,33 +24,31 @@ class Model_Dvelum_Shop_Category extends Model
      * @param array $fields
      * @return array
      */
-    public function getTreeList(array $fields)
+    public function getTreeList(array $fields, ?string $node = null) : array
     {
-        //No recursion
-        $node = Request::post('node', 'string', null);
         if(!empty($node)){
-            Response::jsonSuccess();
+            return [];
         }
         /*
          * Add the required fields to the list
          */
         $fields = array_unique(array_merge(['id','parent_id','order_no'],$fields));
-        $data = $this->getList(['sort'=>'order_no','dir'=>'ASC'], false, $fields);
+        $data = $this->query()
+                    ->params(['sort'=>'order_no','dir'=>'ASC'])
+                    ->fields($fields)
+                    ->fetchAll();
 
         if(empty($data))
             return [];
 
         $tree = new Tree();
 
-        foreach($data as $value)
-        {
+        foreach($data as $value) {
             if(empty($value['parent_id'])){
                 $value['parent_id'] = 0;
             }
-
             $tree->addItem($value['id'], $value['parent_id'], $value , $value['order_no']);
         }
-
         return $this->createTreeStructure($tree , 0);
     }
 

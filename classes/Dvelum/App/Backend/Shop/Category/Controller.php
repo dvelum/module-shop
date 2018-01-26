@@ -46,11 +46,12 @@ class Controller extends Backend\Ui\Controller
      */
     public function treeListAction()
     {
+        $node = $this->request->post('node', 'string', null);
         /**
          * @var \Model_Dvelum_Shop_Category $categoryModel
          */
         $categoryModel = Model::factory('Dvelum_Shop_Category');
-        $this->response->json($categoryModel->getTreeList(['enabled','code','title']));
+        $this->response->json($categoryModel->getTreeList(['enabled','code','title'], $node));
     }
 
     /**
@@ -72,6 +73,7 @@ class Controller extends Backend\Ui\Controller
 
         if(!$id || !strlen($newParent) || empty($order)){
             $this->response->error($this->lang->get('WRONG_REQUEST'));
+            return;
         }
 
         try{

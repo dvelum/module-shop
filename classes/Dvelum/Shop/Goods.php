@@ -1,60 +1,69 @@
 <?php
+declare(strict_types=1);
 /**
- *  DVelum project http://dvelum.net, http://dvelum.ru, https://github.com/k-samuel/dvelum
- *  Copyright (C) 2011-2017  Kirill Yegorov
+ * DVelum project http://code.google.com/p/dvelum/ , https://github.com/k-samuel/dvelum , http://dvelum.net
+ * Copyright (C) 2011-2017  Kirill Yegorov
  *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *   (at your option) any later version.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+namespace Dvelum\Shop;
 
-class Dvelum_Shop_Goods
+use \Exception;
+
+class Goods
 {
     protected $code;
 
-    protected $id = false;
+    /**
+     * Record id
+     * @var int $id
+     */
+    protected $id = 0;
 
     protected $data;
 
     /**
-     * @var Dvelum_Shop_Product
+     * @var Product
      */
     protected $config;
 
     /**
-     * @param string $code
-     * @return Dvelum_Shop_Goods
+     * @param int|string $code
+     * @return Goods
+     * @throws Exception
      */
-    static public function factory($code)
+    static public function factory($code) : Goods
     {
         return new static($code);
     }
 
     /**
-     * Dvelum_Shop_Product constructor.
      * @param string $code
+     * @throws Exception
      */
     protected function __construct($code)
     {
         $this->code = $code;
-        $this->config = Dvelum_Shop_Product::factory($code);
+        $this->config = Product::factory($code);
         $this->data['product'] = $code;
     }
 
     /**
      * Set product id
-     * @param integer $id
+     * @param int $id
      */
-    public function setId($id)
+    public function setId(int $id) : void
     {
         $this->id = $id;
     }
@@ -63,7 +72,7 @@ class Dvelum_Shop_Goods
      * @param array $data
      * @throws Exception
      */
-    public function setValues(array $data)
+    public function setValues(array $data) : void
     {
         foreach ($data as $k=>$v){
             $this->set($k,$v);
@@ -76,7 +85,7 @@ class Dvelum_Shop_Goods
      * @param mixed $val
      * @throws Exception
      */
-    public function set($key, $val)
+    public function set($key, $val) : void
     {
         if($key == 'id'){
             $this->setId($val);
@@ -119,7 +128,7 @@ class Dvelum_Shop_Goods
      * @param string $field
      * @return bool
      */
-    public function hasValue($field)
+    public function hasValue($field) : bool
     {
         return array_key_exists($field, $this->data);
     }
@@ -128,7 +137,7 @@ class Dvelum_Shop_Goods
      * Get product data
      * @return array
      */
-    public function getData()
+    public function getData() : array
     {
         return $this->data;
     }
@@ -137,7 +146,7 @@ class Dvelum_Shop_Goods
      * Get product id
      * @return integer
      */
-    public function getId()
+    public function getId() : int
     {
         return $this->id;
     }
@@ -146,24 +155,24 @@ class Dvelum_Shop_Goods
      * Get code of product classification
      * @return string
      */
-    public function getCode()
+    public function getCode() : string
     {
         return $this->code;
     }
 
     /**
      * Get Product configuration object
-     * @return Dvelum_Shop_Product
+     * @return Product
      */
-    public function getConfig()
+    public function getConfig() : Product
     {
         return $this->config;
     }
     /**
      * Get Product configuration object
-     * @return Dvelum_Shop_Product
+     * @return Product
      */
-    public function getProduct()
+    public function getProduct(): Product
     {
         return $this->getConfig();
     }
@@ -171,8 +180,9 @@ class Dvelum_Shop_Goods
     /**
      * Set Item data, skip validation
      * System method
+     * @param array $data
      */
-    public function setRawData(array $data)
+    public function setRawData(array $data) : void
     {
         if(isset($data['id'])){
             $this->setId($data['id']);

@@ -1,21 +1,37 @@
 <?php
 /**
- *  DVelum project http://dvelum.net, http://dvelum.ru, https://github.com/k-samuel/dvelum
- *  Copyright (C) 2011-2017  Kirill Yegorov
+ * DVelum project http://code.google.com/p/dvelum/ , https://github.com/k-samuel/dvelum , http://dvelum.net
+ * Copyright (C) 2011-2017  Kirill Yegorov
  *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *   (at your option) any later version.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+declare(strict_types=1);
+
+namespace Dvelum\Shop\Storage;
+
+use Dvelum\Orm\Model;
+use Dvelum\Orm\Record;
+use Dvelum\Config\ConfigInterface;
+use Dvelum\Utils;
+
+use Dvelum\Db\Select;
+use Dvelum\Db\Select\Filter;
+
+use \Exception;
+
+use Dvelum\Shop\Goods;
+use Dvelum\Shop\Event;
 
 /**
  * Simple product storage.
@@ -33,7 +49,7 @@
  *  - data types ignored
  *  - not optimal storage size
  */
-class Dvelum_Shop_Storage_Table extends Dvelum_Shop_Storage_AbstractAdapter
+class Table extends AbstractAdapter
 {
     /**
      * @var Model $itemsModel
@@ -48,7 +64,7 @@ class Dvelum_Shop_Storage_Table extends Dvelum_Shop_Storage_AbstractAdapter
      */
     protected $imagesModel;
 
-    public function __construct(Config_Abstract $config)
+    public function __construct(ConfigInterface $config)
     {
         parent::__construct($config);
         $this->itemsModel = Model::factory($config->get('items_object'));
@@ -58,20 +74,25 @@ class Dvelum_Shop_Storage_Table extends Dvelum_Shop_Storage_AbstractAdapter
     /**
      * Load goods by id
      * @param integer $id
-     * @return Dvelum_Shop_Goods
+     * @return Goods
      * @throws Exception
      */
-    public function load($id)
+    public function load($id) : Goods
     {
-        $object = Db_Object::factory($this->config->get('items_object'), $id);
+        $object = Record::factory($this->config->get('items_object'), $id);
         $item = $object->getData();
 
-        $data = $this->fieldsModel->getList(false, ['item_id'=>$id]);
+        $data = $this->fieldsModel->query()
+            ->filters(['item_id'=>$id])
+            ->fetchAll();
 
         $productCode = $item['product'];
 
         $dataObject = $this->config->get('item_class');
 
+        /**
+         * @var Goods $goodsObject
+         */
         $goodsObject = $dataObject::factory($productCode);
 
         $product = $goodsObject->getConfig();
@@ -107,13 +128,20 @@ class Dvelum_Shop_Storage_Table extends Dvelum_Shop_Storage_AbstractAdapter
     /**
      * Load multiple items
      * @param array $id
-     * @return Dvelum_Shop_Goods[]
+     * @return Goods[]
      * @throws Exception
      */
-    public function loadItems(array $id)
+    public function loadItems(array $id) : array
     {
-        $goods = Db_Object::factory($this->config->get('items_object'), $id);
-        $fields = $this->fieldsModel->getList(false,['item_id'=>$id]);
+        /**
+         * @var Record[]
+         */
+        $goods = Record::factory($this->config->get('items_object'), $id);
+
+        $fields = $this->fieldsModel->query()
+            ->filters(['item_id'=>$id])
+            ->fetchAll();
+
         if(!empty($fields)){
             $fields = Utils::groupByKey('item_id', $fields);
         }
@@ -135,6 +163,9 @@ class Dvelum_Shop_Storage_Table extends Dvelum_Shop_Storage_AbstractAdapter
                     }
                 }
             }
+            /**
+             * @var Goods $object
+             */
             $object = $dataObject::factory($itemData['product']);
             $object->setRawData($itemData);
             $result[$itemId] = $object;
@@ -144,17 +175,17 @@ class Dvelum_Shop_Storage_Table extends Dvelum_Shop_Storage_AbstractAdapter
 
     /**
      * Save item
-     * @param Dvelum_Shop_Goods $item
+     * @param Goods $item
      * @return bool
      */
-    public function save(Dvelum_Shop_Goods $item)
+    public function save(Goods $item) : bool
     {
         $isNew = (boolean) $item->getId();
-        $this->fireEvent(Dvelum_Shop_Event::BEFORE_SAVE, $item);
+        $this->fireEvent(Event::BEFORE_SAVE, $item);
         if($isNew){
-            $this->fireEvent(Dvelum_Shop_Event::BEFORE_INSERT, $item);
+            $this->fireEvent(Event::BEFORE_INSERT, $item);
         }else{
-            $this->fireEvent(Dvelum_Shop_Event::BEFORE_UPDATE, $item);
+            $this->fireEvent(Event::BEFORE_UPDATE, $item);
         }
 
         $fields = $item->getConfig()->getFields();
@@ -163,7 +194,6 @@ class Dvelum_Shop_Storage_Table extends Dvelum_Shop_Storage_AbstractAdapter
         $system = [];
         $properties = [];
 
-        $goodsId = $item->getId();
         $productCode = $item->getCode();
 
         $system['product'] = $productCode;
@@ -202,11 +232,10 @@ class Dvelum_Shop_Storage_Table extends Dvelum_Shop_Storage_AbstractAdapter
 
         try{
             $itemsDb->beginTransaction();
-            $o = Db_Object::factory($this->config->get('items_object'), $item->getId());
+            $o = Record::factory($this->config->get('items_object'), $item->getId());
             $o->setValues($system);
 
             if(!$o->save(false)){
-                $itemsDb->rollBack();
                 throw new Exception('Cannot save '.$this->config->get('items_object'));
             }
             $id = $o->getId();
@@ -220,18 +249,20 @@ class Dvelum_Shop_Storage_Table extends Dvelum_Shop_Storage_AbstractAdapter
             $fieldsDb->delete($this->fieldsModel->table(),'item_id ='.intval($item->getId()));
 
             if(!empty($properties)){
-                if(!$this->fieldsModel->multiInsert($properties)){
+                $insert = new Model\Insert($this->fieldsModel);
+                if(!$insert->bulkInsert($properties)){
                     return false;
                 }
             }
             $itemsDb->commit();
-            $this->fireEvent(Dvelum_Shop_Event::AFTER_SAVE, $item);
+            $this->fireEvent(Event::AFTER_SAVE, $item);
             if($isNew){
-                $this->fireEvent(Dvelum_Shop_Event::AFTER_INSERT, $item);
+                $this->fireEvent(Event::AFTER_INSERT, $item);
             }else{
-                $this->fireEvent(Dvelum_Shop_Event::AFTER_UPDATE, $item);
+                $this->fireEvent(Event::AFTER_UPDATE, $item);
             }
         }catch (Exception $e){
+            echo $e->getMessage();
             $itemsDb->rollBack();
             $this->itemsModel->logError($e->getMessage());
             return false;
@@ -252,7 +283,7 @@ class Dvelum_Shop_Storage_Table extends Dvelum_Shop_Storage_AbstractAdapter
         $sysFilter = [];
         $fieldFilter = [];
 
-        $config = Db_Object_Config::getInstance($this->itemsModel->getObjectName());
+        $config = Record\Config::factory($this->itemsModel->getObjectName());
 
         if(!empty($filters))
         {
@@ -268,24 +299,27 @@ class Dvelum_Shop_Storage_Table extends Dvelum_Shop_Storage_AbstractAdapter
         $db = $this->itemsModel->getDbConnection();
         $sql = $db->select()->from($this->itemsModel->table(),['id']);
 
+        $queryObject = new Model\Query($this->itemsModel);
+        $queryObject->applyFilters($sql, $filters);
 
         // add filters for system fields
         if(!empty($sysFilter)){
-            $this->itemsModel->queryAddFilters($sql, $sysFilter);
+            $queryObject->applyFilters($sql, $sysFilter);
         }
 
         // add fields filters
         if(!empty($fieldFilter)){
-            $this->applyFieldFilters($sql);
+            $this->applyFieldFilters($sql, $fieldFilter);
         }
 
         // add text search
         if(!empty($query)){
-            $this->itemsModel->queryAddSearchString($sql, $query, false, '%[s]%');
+            $queryObject->applySearch($sql, $query, Model\Query::SEARCH_TYPE_CONTAINS);
         }
+
         // add params
         if(!empty($params)){
-            Model::queryAddPagerParams($sql,$params);
+            $queryObject->applyParams($sql, $params);
         }
 
         try{
@@ -304,14 +338,15 @@ class Dvelum_Shop_Storage_Table extends Dvelum_Shop_Storage_AbstractAdapter
      * Get items count
      * @param array|boolean $filters
      * @param string|boolean $query (text search)
-     * @return integer
+     * @return int
+     * @throws Exception
      */
-    public function count($filters = false, $query = false)
+    public function count($filters = false, $query = false) : int
     {
         $sysFilter = [];
         $fieldFilter = [];
 
-        $config = Db_Object_Config::getInstance($this->itemsModel->getObjectName());
+        $config = Record\Config::factory($this->itemsModel->getObjectName());
 
         if(!empty($filters))
         {
@@ -324,35 +359,41 @@ class Dvelum_Shop_Storage_Table extends Dvelum_Shop_Storage_AbstractAdapter
             }
         }
 
+
         $db = $this->itemsModel->getDbConnection();
         $sql = $db->select()->from($this->itemsModel->table(),['count'=>'COUNT(*)']);
 
+        $queryObject = new Model\Query($this->itemsModel);
 
         // add filters for system fields
         if(!empty($sysFilter)){
-            $this->itemsModel->queryAddFilters($sql, $sysFilter);
+            $queryObject->applyFilters($sql, $sysFilter);
         }
 
         // add fields filters
         if(!empty($fieldFilter)){
-            $this->applyFieldFilters($sql);
+            $queryObject->applyFilters($sql, $fieldFilter);
         }
 
         // add text search
         if(!empty($query)){
-            $this->itemsModel->queryAddSearchString($sql, $query, false, '%[s]%');
+            $queryObject->applySearch($sql, $query, Model\Query::SEARCH_TYPE_CONTAINS);
         }
 
         try{
-            return $db->fetchOne($sql);
+            return (int) $db->fetchOne($sql);
         }catch (Exception $e){
-            echo $e->getMessage();
             $this->itemsModel->logError($e->getMessage());
             return 0;
         }
     }
 
-    protected function applyFieldFilters($sql, array $fieldFilters)
+    /**
+     * @param Select $sql
+     * @param array $fieldFilters
+     * @throws Exception
+     */
+    protected function applyFieldFilters(Select $sql, array $fieldFilters)
     {
         $db = $this->fieldsModel->getDbConnection();
         $subSelect = $db->select()->distinct()->from($this->fieldsModel->table(),['item_id']);
@@ -366,34 +407,34 @@ class Dvelum_Shop_Storage_Table extends Dvelum_Shop_Storage_AbstractAdapter
                 $method = 'orWhere';
             }
 
-            if($filter instanceof Db_Select_Filter)
+            if($filter instanceof Filter)
             {
                 $sqlPrefix = '`field` ='.$db->quote($filter->field).' AND ';
 
                 switch ($filter->type){
-                    case Db_Select_Filter::LT:
-                    case Db_Select_Filter::GT:
-                    case Db_Select_Filter::GT_EQ:
-                    case Db_Select_Filter::LT_EQ:
-                    case Db_Select_Filter::NOT_NULL :
-                    case Db_Select_Filter::IS_NULL :
-                    case Db_Select_Filter::BETWEEN:
-                    case Db_Select_Filter::NOT_BETWEEN:
+                    case Filter::LT:
+                    case Filter::GT:
+                    case Filter::GT_EQ:
+                    case Filter::LT_EQ:
+                    case Filter::NOT_NULL :
+                    case Filter::IS_NULL :
+                    case Filter::BETWEEN:
+                    case Filter::NOT_BETWEEN:
                         throw new Exception('Dvelum_Shop_Storage_Table does not support query filter "'.$filter->type.'"');
                         break;
-                    case Db_Select_Filter::LIKE:
-                    case Db_Select_Filter::NOT_LIKE:
+                    case Filter::LIKE:
+                    case Filter::NOT_LIKE:
                         if(is_array($filter->value)) {
                             throw new Exception('Dvelum_Shop_Storage_Table does not support query multiple filter "' . $filter->type . '"');
                         }
                         $subSelect->$method($sqlPrefix.' `value` ' . $filter->type . ' '.$db->quote('%' .  $filter->value . '%'));
                         break;
-                    case Db_Select_Filter::EQ:
-                    case Db_Select_Filter::NOT:
+                    case Filter::EQ:
+                    case Filter::NOT:
                         $subSelect->$method($sqlPrefix.' `value` ' . $filter->type . ' ?' , $filter->value);
                         break;
-                    case Db_Select_Filter::IN:
-                    case Db_Select_Filter::NOT_IN:
+                    case Filter::IN:
+                    case Filter::NOT_IN:
                         $subSelect->$method($sqlPrefix.' `value` ' . $filter->type . ' (?)' , $filter->value);
                         break;
                 }
@@ -412,17 +453,17 @@ class Dvelum_Shop_Storage_Table extends Dvelum_Shop_Storage_AbstractAdapter
 
     /**
      * Delete item
-     * @param Dvelum_Shop_Goods $item
+     * @param Goods $item
      * @return boolean
      */
-    public function delete(Dvelum_Shop_Goods $item)
+    public function delete(Goods $item) : bool
     {
-        $this->fireEvent(Dvelum_Shop_Event::BEFORE_DELETE, $item);
+        $this->fireEvent(Event::BEFORE_DELETE, $item);
         try{
             $db = $this->itemsModel->getDbConnection();
             $db->beginTransaction();
 
-            $o = Db_Object::factory($this->config->get('items_object'), $item->getId());
+            $o = Record::factory($this->config->get('items_object'), $item->getId());
 
             if(!$o->delete(false)){
                 throw new Exception('Cannot delete object ', $o->getId());
@@ -431,7 +472,7 @@ class Dvelum_Shop_Storage_Table extends Dvelum_Shop_Storage_AbstractAdapter
             $fieldsDb = $this->fieldsModel->getDbConnection();
             $fieldsDb->delete($this->fieldsModel->table(),'item_id ='.intval($item->getId()));
             $db->commit();
-            $this->fireEvent(Dvelum_Shop_Event::AFTER_DELETE, $item);
+            $this->fireEvent(Event::AFTER_DELETE, $item);
         }catch (Exception $e){
             $this->itemsModel->logError($e->getMessage());
             $db->rollBack();
@@ -443,10 +484,10 @@ class Dvelum_Shop_Storage_Table extends Dvelum_Shop_Storage_AbstractAdapter
     /**
      * Check item ID
      * @param $id
-     * @return boolean
+     * @return bool
      */
-    public function itemExist($id)
+    public function itemExist($id) : bool
     {
-        return (boolean)$this->count(['id'=>$id]);
+        return (boolean) $this->count(['id'=>$id]);
     }
 }

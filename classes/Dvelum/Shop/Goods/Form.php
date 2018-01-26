@@ -1,26 +1,32 @@
 <?php
+declare(strict_types=1);
 /**
- *  DVelum project http://dvelum.net, http://dvelum.ru, https://github.com/k-samuel/dvelum
- *  Copyright (C) 2011-2017  Kirill Yegorov
+ * DVelum project http://code.google.com/p/dvelum/ , https://github.com/k-samuel/dvelum , http://dvelum.net
+ * Copyright (C) 2011-2017  Kirill Yegorov
  *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *   (at your option) any later version.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+namespace Dvelum\Shop\Goods;
 
+use Dvelum\Lang;
+use Dvelum\Shop\Goods;
+use Dvelum\Shop\Image;
+Use Dvelum\Shop\Product;
+Use Dvelum\Shop\Product\Field;
 
-class Dvelum_Shop_Goods_Form
+class Form
 {
-
     protected $lang;
     protected $shopLang;
 
@@ -49,20 +55,20 @@ class Dvelum_Shop_Goods_Form
 
     /**
      * Prepare goods data
-     * @param Dvelum_Shop_Goods $object
+     * @param Goods $object
      * @return array
      */
-    public function frontendFormData(Dvelum_Shop_Goods $object)
+    public function frontendFormData(Goods $object) : array
     {
         return $this->backendFormData($object);
     }
 
     /**
      * Create Ext.data.Field configuration object for Product Field
-     * @param Dvelum_Shop_Product_Field $field
+     * @param Field $field
      * @return array
      */
-    public function backendFieldConfig(Dvelum_Shop_Product_Field $field)
+    public function backendFieldConfig(Field $field) : array
     {
         $minValue = $field->getMinValue();
         $maxValue = $field->getMaxValue();
@@ -179,7 +185,7 @@ class Dvelum_Shop_Goods_Form
         return $cfg;
     }
 
-    public function backendFormConfig(Dvelum_Shop_Product $product)
+    public function backendFormConfig(Product $product)
     {
         $fields = $product->getFields();
         $groups = $product->getGroupsConfig();
@@ -234,7 +240,9 @@ class Dvelum_Shop_Goods_Form
             ];
 
             foreach ($fields as $field) {
-
+                /**
+                 * @var Field $field
+                 */
                 if ($field->getName() == 'id' || $field->getName() == 'images') {
                     continue;
                 }
@@ -260,10 +268,10 @@ class Dvelum_Shop_Goods_Form
 
     /**
      * Prepare goods data
-     * @param Dvelum_Shop_Goods $object
+     * @param Goods $object
      * @return array
      */
-    public function backendFormData(Dvelum_Shop_Goods $object)
+    public function backendFormData(Goods $object) : array
     {
         $product = $object->getConfig();
         $fields = $product->getFields();
@@ -276,7 +284,7 @@ class Dvelum_Shop_Goods_Form
 
         if(!empty($images) && is_array($images))
         {
-            $imageStore = Dvelum_Shop_Image::factory();
+            $imageStore = Image::factory();
             $images = $imageStore->getImages($images);
             foreach ($images as &$image){
                 $image = [
@@ -306,8 +314,6 @@ class Dvelum_Shop_Goods_Form
                 $result[$formName] = null;
             }
         }
-
-
         return $result;
     }
 }

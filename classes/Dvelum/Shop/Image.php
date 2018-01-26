@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  *  DVelum project http://dvelum.net, http://dvelum.ru, https://github.com/k-samuel/dvelum
  *  Copyright (C) 2011-2017  Kirill Yegorov
@@ -16,19 +17,28 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+namespace Dvelum\Shop;
 
-class Dvelum_Shop_Image
+use Dvelum\Shop\Image\AbstractAdapter;
+use Dvelum\Config;
+use \Exception;
+
+class Image
 {
     /**
-     * @return Dvelum_Shop_Image_AbstractAdapter
+     * @return AbstractAdapter
+     * @throws Exception
      */
-    static public function factory()
+    static public function factory() : AbstractAdapter
     {
+        /**
+         * @var AbstractAdapter $instance
+         */
         static $instance = false;
 
         if(!$instance){
-            $configObject = new Config_Simple('dvelum_shop_image');
-            $configObject->setData(Config::storage()->get('dvelum_shop.php')->get('images'));
+            $configData = Config::storage()->get('dvelum_shop.php')->get('images');
+            $configObject = Config\Factory::create($configData, 'dvelum_shop_image');
             $adapter = $configObject->get('adapter');
             $instance = new $adapter($configObject);
         }

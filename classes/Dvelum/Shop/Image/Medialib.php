@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  *  DVelum project http://dvelum.net, http://dvelum.ru, https://github.com/k-samuel/dvelum
  *  Copyright (C) 2011-2017  Kirill Yegorov
@@ -16,8 +17,16 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+namespace Dvelum\Shop\Image;
 
-class Dvelum_Shop_Image_Medialib extends Dvelum_Shop_Image_AbstractAdapter
+use Dvelum\Config;
+use Dvelum\Config\ConfigInterface;
+use Dvelum\Orm\Model;
+use Dvelum\Request;
+
+use \Model_Medialib;
+
+class Medialib extends AbstractAdapter
 {
     /**
      * Files path
@@ -42,7 +51,7 @@ class Dvelum_Shop_Image_Medialib extends Dvelum_Shop_Image_AbstractAdapter
      */
     protected $uploaderConfig = [];
 
-    public function __construct(Config_Abstract $config)
+    public function __construct(ConfigInterface $config)
     {
         parent::__construct($config);
         $appConfig = Config::storage()->get('main.php');
@@ -60,7 +69,7 @@ class Dvelum_Shop_Image_Medialib extends Dvelum_Shop_Image_AbstractAdapter
      */
     public function addImage($path, array $info)
     {
-        $uploader = new Upload($this->uploaderConfig);
+        $uploader = new \Upload($this->uploaderConfig);
 
         $files = [[
             'name'=> basename($path),
@@ -116,9 +125,9 @@ class Dvelum_Shop_Image_Medialib extends Dvelum_Shop_Image_AbstractAdapter
     /**
      * Delete image
      * @param $id
-     * @return boolean
+     * @return bool
      */
-    public function deleteImage($id)
+    public function deleteImage($id) : bool
     {
         return $this->mediaModel->remove($id);
     }
@@ -128,7 +137,7 @@ class Dvelum_Shop_Image_Medialib extends Dvelum_Shop_Image_AbstractAdapter
      * @param $id
      * @return array
      */
-    public function getImage($id)
+    public function getImage($id) : array
     {
         $info = $this->mediaModel->getItem($id);
 
@@ -152,9 +161,9 @@ class Dvelum_Shop_Image_Medialib extends Dvelum_Shop_Image_AbstractAdapter
      * @param array $ids
      * @return array
      */
-    public function getImages(array $ids)
+    public function getImages(array $ids) : array
     {
-        $data = $this->mediaModel->getList(false,['id'=>$ids]);
+        $data = $this->mediaModel->query()->filters(['id'=>$ids])->fetchAll();
 
         if(empty($data)){
             return [];
@@ -181,7 +190,7 @@ class Dvelum_Shop_Image_Medialib extends Dvelum_Shop_Image_AbstractAdapter
      * Upload images
      * @return array
      */
-    public function uploadImages()
+    public function uploadImages() : array
     {
         $uploadCategory =  $this->config->get('category');
 
@@ -200,21 +209,21 @@ class Dvelum_Shop_Image_Medialib extends Dvelum_Shop_Image_AbstractAdapter
         if(!is_dir($uploadDir) && !@mkdir($uploadDir, 0775, true))
         {
             $this->mediaModel->logError('Cannot write to'.$uploadDir);
-            return false;
+            return [];
         }
 
-        $files = Request::files();
+        $files = Request::factory()->files();
 
-        $uploader = new Upload($mediaCfg);
+        $uploader = new \Upload($mediaCfg);
 
         if(empty($files)){
-            return false;
+            return [];
         }
 
         $uploaded = $uploader->start($files, $uploadDir);
 
         if(empty($uploaded)){
-            return false;
+            return [];
         }
 
         $data = [];

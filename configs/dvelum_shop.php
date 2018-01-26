@@ -8,16 +8,16 @@ return [
         'lang'=>'dvelum_shop',
     ],
     'storage' =>[
-        'adapter' => 'Dvelum_Shop_Storage_Table',
+        'adapter' => '\\Dvelum\\Shop\\Storage\\Table',
         'items_object'=> 'dvelum_shop_goods',
         'fields_object' => 'dvelum_shop_goods_properties',
-        'item_class' => 'Dvelum_Shop_Goods',
+        'item_class' => '\\Dvelum\\Shop\\Goods',
         /*
          *  Event listeners
          * 'eventName' => [[class, (static) method], [class, (static) method]]
          *  event arguments:
-         *      Dvelum_Shop_Event event,
-         *      Dvelum_Shop_Goods $object
+         *      \\Dvelum\\Shop\\Event event,
+         *      \\Dvelum\\Shop\\Goods $object
          */
         'listeners' => [
             /*
@@ -33,7 +33,7 @@ return [
         ]
     ],
     'images' => [
-        'adapter'=>'Dvelum_Shop_Image_Medialib',
+        'adapter'=>'\\Dvelum\\Shop\\Image\\Medialib',
         // path relative uploads directory (main.php -> uploads)
         'file_path' => 'goods/',
         'category'=>null

@@ -20,6 +20,7 @@ declare(strict_types=1);
 namespace Dvelum\Shop\Product\Field;
 
 use Dvelum\Shop\Product\Field;
+use Dvelum\Filter;
 
 class StringField extends Field
 {
