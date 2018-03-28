@@ -17,7 +17,19 @@ class Installer extends Externals\Installer
      */
     public function install(ConfigInterface $applicationConfig, ConfigInterface $moduleConfig)
     {
-
+        // Add permissions
+        $userInfo = User::getInstance()->getInfo();
+        /**
+         * @var \Model_Permissions $permissionsModel
+         */
+        $permissionsModel = Model::factory('Permissions');
+        $modules = ['Dvelum_Shop_Category','Dvelum_Shop_Product','Dvelum_Shop_Goods'];
+        foreach ($modules as $module){
+            if (!$permissionsModel->setGroupPermissions($userInfo['group_id'], $module, 1, 1, 1, 1)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
