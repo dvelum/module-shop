@@ -25,6 +25,7 @@ use Dvelum\Orm\Model;
 use Dvelum\Request;
 
 use \Model_Medialib;
+use Dvelum\App\Session\User;
 
 class Medialib extends AbstractAdapter
 {
