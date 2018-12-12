@@ -7,4 +7,4 @@ GNU General Public License version 3.0
 
 Installation
 -------
-composer require dvelum/module-catalog
+composer require dvelum/module-shop
