@@ -1,8 +1,12 @@
 <?php
+declare(strict_types=1);
+namespace Dvelum\Utils\String\Translit;
+
+use Dvelum\Filter;
 /**
  *  Transliterate from rus to eng
  */
-class Dvelum_Utils_String_Translit_Ru
+class Ru
 {
     protected $convert = [
         'а' => 'a',   'б' => 'b',   'в' => 'v',
@@ -31,15 +35,15 @@ class Dvelum_Utils_String_Translit_Ru
     ];
 
     // String transliteration
-    public function transliterate($string)
+    public function transliterate(string $string): string
     {
         return strtr($string, $this->convert);
     }
 
     // String to url transliteration
-    public function stringToUrl($string)
+    public function stringToUrl(string $string) : string
     {
-        $string = mb_strtolower(trim($string));
+        $string = \mb_strtolower(trim($string));
         $string = str_replace([' ','_'],'-', $string);
         $string = $this->transliterate($string);
         $string = Filter::filterValue(Filter::FILTER_PAGECODE, $string);
