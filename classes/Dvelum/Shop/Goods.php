@@ -97,9 +97,16 @@ class Goods
 
         $field = $this->config->getField($key);
 
-        $value = $field->filter($val);
-        if(!$field->isValid($value)){
-            throw new Exception('Invalid value for field '.$key);
+
+        if(is_null($val) && $field->isRequired()){
+            throw new Exception('no value for required field field '.$key);
+        }elseif(is_null($val) && !$field->isRequired()){
+            $value = null;
+        }else{
+            $value = $field->filter($val);
+            if(!$field->isValid($value)){
+                throw new Exception('Invalid value for field '.$key);
+            }
         }
 
         $this->data[$key] = $value;
