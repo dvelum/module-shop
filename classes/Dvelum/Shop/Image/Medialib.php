@@ -164,6 +164,10 @@ class Medialib extends AbstractAdapter
      */
     public function getImages(array $ids) : array
     {
+        if(empty($ids)){
+            return [];
+        }
+
         $data = $this->mediaModel->query()->filters(['id'=>$ids])->fetchAll();
 
         if(empty($data)){
