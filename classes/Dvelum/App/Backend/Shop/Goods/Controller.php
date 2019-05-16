@@ -274,6 +274,10 @@ class Controller extends Backend\Ui\Controller
                 $posted[$name] = [];
             }
 
+            if($field->isStringType() && !strlen((string)$posted[$name]) ){
+                $posted[$name] = null;
+            }
+
             try{
                 $object->set($name , $posted[$name]);
             }catch(Exception $e){

@@ -217,4 +217,13 @@ class Field
             return false;
         }
     }
+
+    /**
+     * Check if field contains characters
+     * @return bool
+     */
+    public function isStringType() : bool
+    {
+        return $this instanceof \Dvelum\Shop\Product\Field\StringField;
+    }
 }
