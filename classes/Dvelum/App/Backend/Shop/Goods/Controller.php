@@ -274,7 +274,15 @@ class Controller extends Backend\Ui\Controller
                 $posted[$name] = [];
             }
 
-            if($field->isStringType() && !strlen((string)$posted[$name]) ){
+            if($field->isNumericType() && $field->isMultiValue() && empty($posted[$name])) {
+                $posted[$name] = [];
+            }
+
+            if($field->isNumericType() && !$field->isMultiValue() && !strlen((string)$posted[$name])) {
+                $posted[$name] = null;
+            }
+
+            if($field->isStringType() && !is_array($posted[$name]) && !strlen((string)$posted[$name]) ){
                 $posted[$name] = null;
             }
 

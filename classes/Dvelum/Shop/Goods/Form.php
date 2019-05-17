@@ -111,7 +111,7 @@ class Form
 
                 $cfg['xtype'] ='numberfield';
                 $cfg['allowDecimals'] = true;
-
+                $cfg['decimalSeparator'] = '.';
                 if(!is_null($minValue)){
                     $cfg['minValue'] = $minValue;
                 }

@@ -226,4 +226,13 @@ class Field
     {
         return $this instanceof \Dvelum\Shop\Product\Field\StringField;
     }
+
+    /**
+     * Check if field contains characters
+     * @return bool
+     */
+    public function isNumericType() : bool
+    {
+        return $this instanceof \Dvelum\Shop\Product\Field\NumberField;
+    }
 }
