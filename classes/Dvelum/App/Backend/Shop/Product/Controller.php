@@ -139,6 +139,12 @@ class Controller extends Backend\Ui\Controller
                 $field['maxValue'] = null;
             }
 
+            if($field['type']=='boolean'){
+                $field['inputValue'] = 1;
+                $field['uncheckedValue'] = 0;
+                $field['submitValue'] = true;
+            }
+
             if(isset($field['list']) && !empty($field['list'])){
                 $listData = [];
                 foreach ($field['list'] as $v){
