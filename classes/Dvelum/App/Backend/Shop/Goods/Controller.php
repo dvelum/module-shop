@@ -270,8 +270,17 @@ class Controller extends Backend\Ui\Controller
                 continue;
             }
 
-            if($field->isMultiValue() && empty($posted[$name])){
-                $posted[$name] = [];
+            if($field->isMultiValue()){
+                if(empty($posted[$name])){
+                    $posted[$name] = [];
+                }
+                /*
+                 * Fix for tag field
+                 * Tag field send post name[]=null it converts to $_POST[name][0]='';
+                 */
+                if(is_array($posted[$name]) && count($posted[$name])===1 && isset($posted[$name][0]) && empty($posted[$name][0])){
+                    $posted[$name] = [];
+                }
             }
 
             if($field->isNumericType() && $field->isMultiValue() && empty($posted[$name])) {
