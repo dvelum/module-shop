@@ -1,6 +1,6 @@
 {
   "name": "dvelum/module-shop",
-  "version": "2.0.0-dev",
+  "version": "2.0.1-dev",
   "type": "dvelum-module",
   "description": "Shop catalog module for DVelum v2",
   "keywords": ["dvelum","shop", "catalog"],

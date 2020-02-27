@@ -1,7 +1,7 @@
 <?php
 return [
     'id' => 'dvelum-module-shop',
-    'version' => '2.0.0',
+    'version' => '2.0.1',
     'author' => 'Kirill Yegorov',
     'name' => 'DVelum Shop',
     'description' => 'Catalog module, requires DVelum >=2.0.0',

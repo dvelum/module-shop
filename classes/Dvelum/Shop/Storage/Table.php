@@ -133,21 +133,48 @@ class Table extends AbstractAdapter
      */
     public function loadItems(array $id) : array
     {
+        $dataObject = $this->config->get('item_class');
         /**
          * @var Record[]
          */
         $goods = Record::factory($this->config->get('items_object'), $id);
 
-        $fields = $this->fieldsModel->query()
+        $data = $this->fieldsModel->query()
             ->filters(['item_id'=>$id])
             ->fetchAll();
 
-        if(!empty($fields)){
-            $fields = Utils::groupByKey('item_id', $fields);
+        $fields = [];
+        /**
+         * @var Goods[] $products
+         */
+        $products = [];
+        if(!empty($data)){
+            foreach ($data as $item){
+                $productId = $item['product_id'];
+                if(!isset($products[$productId])){
+                    $products[$productId] = $dataObject::factory($productId);
+                }
+                $product = $products[$productId];
+                $dataFieldName = $item['field'];
+                $productConfig = $product->getConfig();
+                if(!$productConfig->fieldExist($dataFieldName)){
+                    // database has data for undefined field. Skip
+                    continue;
+                }
+
+                if(!isset($fields[$item['item_id']][$dataFieldName])){
+                    $fields[$item['item_id']][$dataFieldName] = $item;
+                    $fields[$item['item_id']][$dataFieldName]['value'] = null;
+                }
+
+                if($productConfig->getField($dataFieldName)->isMultiValue()){
+                    $fields[$item['item_id']][$dataFieldName]['value'][] = $item['value'];
+                }else{
+                    $fields[$item['item_id']][$dataFieldName]['value'] = $item['value'];
+                }
+            }
         }
         $result = [];
-
-        $dataObject = $this->config->get('item_class');
 
         foreach ($id as $itemId)
         {
@@ -155,7 +182,6 @@ class Table extends AbstractAdapter
                 throw new Exception('Undefined Goods ID:'.$itemId);
             }
             $itemData = $goods[$itemId]->getData();
-
             if(isset($fields[$itemId])){
                 foreach ($fields[$itemId] as $property){
                     if(!isset($itemData[$property['field']])){
