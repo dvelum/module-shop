@@ -256,7 +256,7 @@ class Controller extends Backend\Ui\Controller
                         ||
                         (is_string($posted[$name]) && !strlen($posted[$name]))
                         ||
-                        (is_array($posted[$name] && empty($posted[$name])))
+                        (is_array($posted[$name]) && empty($posted[$name]))
                      )
             ){
                 $errors[$name] = $this->lang->get('CANT_BE_EMPTY');
